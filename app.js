@@ -1,71 +1,104 @@
-//O principal objetivo deste desafio é fortalecer suas habilidades em lógica de programação. Aqui você deverá desenvolver a lógica para resolver o problema.
-// Lista de amigos em memória
-const amigos = [];
+// Lista principal
+let amigos = [];
 
-// Pegamos os elementos da página uma vez
-const inputNome  = document.getElementById('amigo');
-const listaUl    = document.getElementById('listaAmigos');
-const resultadoUl= document.getElementById('resultado');
-
-// Adiciona um nome à lista
-function adicionarAmigo() {
-  const nome = (inputNome.value || '').trim();
-
-  // Valida vazio
-  if (!nome) {
-    alert('Por favor, insira um nome.');
-    inputNome.focus();
-    return;
-  }
-
-  // Valida duplicado (ignorando maiúsc./minúsc.)
-  const duplicado = amigos.some(n => n.toLowerCase() === nome.toLowerCase());
-  if (duplicado) {
-    alert('Esse nome já está na lista.');
-    inputNome.value = '';
-    inputNome.focus();
-    return;
-  }
-
-  amigos.push(nome);
-  atualizarLista();
-
-  // Limpa e foca
-  inputNome.value = '';
-  inputNome.focus();
-
-  // Limpa resultado de sorteio anterior
-  resultadoUl.innerHTML = '';
+// Normaliza para checar duplicados (ignora espaços extras e maiúsculas/minúsculas)
+function normalizar(nome) {
+  return nome.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
-// Re-renderiza a <ul> de nomes
+// Mensagens acessíveis (erro/sucesso/info)
+function exibirMensagem(texto, tipo = "info") {
+  const msg = document.getElementById("mensagem");
+  msg.textContent = texto;
+
+  msg.classList.remove("msg-erro", "msg-sucesso", "msg-info");
+  if (tipo === "erro") msg.classList.add("msg-erro");
+  else if (tipo === "sucesso") msg.classList.add("msg-sucesso");
+  else msg.classList.add("msg-info");
+
+  msg.setAttribute("tabindex", "-1");
+  msg.focus();
+  setTimeout(() => msg.removeAttribute("tabindex"), 0);
+}
+
+// Atualiza UL com os nomes
 function atualizarLista() {
-  listaUl.innerHTML = '';
-  for (let i = 0; i < amigos.length; i++) {
-    const li = document.createElement('li');
-    li.textContent = amigos[i];
-    listaUl.appendChild(li);
+  const ul = document.getElementById("listaAmigos");
+  ul.innerHTML = "";
+  amigos.forEach((nome) => {
+    const li = document.createElement("li");
+    li.textContent = nome;
+    ul.appendChild(li);
+  });
+}
+
+// Adiciona amigo
+function adicionarAmigo() {
+  const input = document.getElementById("amigo");
+  let nome = input.value;
+
+  if (!nome || !nome.trim()) {
+    exibirMensagem("Por favor, insira um nome.", "erro");
+    input.focus();
+    return;
   }
+
+  const chave = normalizar(nome);
+  const existe = amigos.some((n) => normalizar(n) === chave);
+  if (existe) {
+    exibirMensagem("Esse nome já está na lista.", "erro");
+    input.focus();
+    return;
+  }
+
+  nome = nome.trim().replace(/\s+/g, " ");
+  amigos.push(nome);
+  atualizarLista();
+  exibirMensagem(`“${nome}” adicionado com sucesso.`, "sucesso");
+
+  input.value = "";
+  input.focus();
 }
 
 // Sorteia um amigo aleatório
 function sortearAmigo() {
+  const resultado = document.getElementById("resultado");
+  resultado.innerHTML = "";
+
   if (amigos.length === 0) {
-    alert('Adicione pelo menos um nome antes de sortear.');
-    inputNome.focus();
+    exibirMensagem("Adicione ao menos 1 nome antes de sortear.", "erro");
     return;
   }
 
   const indice = Math.floor(Math.random() * amigos.length);
   const sorteado = amigos[indice];
 
-  // Mostra o resultado dentro da <ul id="resultado">
-  resultadoUl.innerHTML = `<li>🎉 Amigo sorteado: <strong>${sorteado}</strong></li>`;
+  const li = document.createElement("li");
+  li.textContent = `Amigo sorteado: ${sorteado}`;
+  resultado.appendChild(li);
+
+  exibirMensagem("Sorteio realizado com sucesso!", "sucesso");
 }
 
-// Atalho: pressionar ENTER adiciona
-if (inputNome) {
-  inputNome.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') adicionarAmigo();
-  });
+// Limpa toda a lista
+function limparLista() {
+  if (amigos.length === 0) {
+    exibirMensagem("A lista já está vazia.", "info");
+    return;
+  }
+  amigos = [];
+  atualizarLista();
+  document.getElementById("resultado").innerHTML = "";
+  exibirMensagem("Lista de amigos apagada.", "sucesso");
 }
+
+// Acessibilidade: Enter adiciona amigo
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("amigo");
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      adicionarAmigo();
+    }
+  });
+});
